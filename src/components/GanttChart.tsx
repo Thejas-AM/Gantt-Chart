@@ -63,7 +63,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ data, onTaskUpdate }) => {
     chart: {
       type: 'gantt',
       height: '500px',
-      backgroundColor: 'transparent' as any // Type casting to fix TS error
+      backgroundColor: 'transparent'
     },
     title: {
       text: 'Project Timeline',
@@ -73,6 +73,27 @@ const GanttChart: React.FC<GanttChartProps> = ({ data, onTaskUpdate }) => {
         color: '#1F2937'
       }
     },
+    navigator: {
+      enabled: true,
+      series: {
+        type: 'gantt',
+        // pointPlacement: 0.5,
+        pointPadding: 0.25
+      },
+      yAxis: {
+        min: 0,
+        max: validTasks.length,
+        reversed: true,
+        categories: []
+      }
+    },
+    scrollbar: {
+      enabled: true
+    },
+    rangeSelector: {
+      enabled: true,
+      selected: 0
+    },
     xAxis: {
       currentDateIndicator: {
         color: '#EF4444',
@@ -81,11 +102,14 @@ const GanttChart: React.FC<GanttChartProps> = ({ data, onTaskUpdate }) => {
           format: '%a %e %b %Y',
           style: {
             color: 'white'
-          } as any // Type casting to fix TS error
+          } as any
         }
       },
       min: minDate,
-      max: maxDate
+      max: maxDate,
+      scrollbar: {
+        enabled: true
+      }
     },
     yAxis: {
       type: 'category',
