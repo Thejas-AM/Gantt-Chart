@@ -17,7 +17,7 @@ const ProjectView = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   // This would typically come from an API or state management
   // For this example, we're using a mockup
   const [project, setProject] = useState<GanttProject | null>(null);
@@ -31,57 +31,71 @@ const ProjectView = () => {
     }
   ]);
 
+  // Add save button state
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // Update the useEffect
   useEffect(() => {
-    // Mock fetching the project
-    // In a real app, this would be an API call
-    console.log("Loading project with ID:", projectId);
-    
-    // Create a mock project or attempt to load from localStorage
-    let mockProject: GanttProject;
-    
+    if (!projectId) {
+      navigate('/');
+      return;
+    }
+  
     try {
-      // Try to load from localStorage if it exists
-      const savedProject = localStorage.getItem(`project_${projectId}`);
-      if (savedProject) {
-        mockProject = JSON.parse(savedProject);
-        console.log("Loaded project from localStorage:", mockProject);
-      } else {
-        // Create a new mock project
-        mockProject = {
-          id: projectId || 'default-1',
-          name: 'Sample Project',
-          description: 'A sample project to demonstrate the app',
-          startDate: getCurrentMonday().getTime(),
-          resources: ['Team Member 1', 'Team Member 2'],
-          data: initialGanttData
-        };
-        console.log("Created new mock project:", mockProject);
+      const savedProjects = localStorage.getItem('gantt-projects');
+      if (savedProjects) {
+        const projects = JSON.parse(savedProjects);
+        const currentProject = projects.find((p: GanttProject) => p.id === projectId);
+        
+        if (currentProject) {
+          setProject(currentProject);
+          setGanttData(currentProject.data);
+          return;
+        }
       }
+      
+      // If project not found, redirect to home
+      toast({
+        title: "Project Not Found",
+        description: "Redirecting to home page",
+        variant: "destructive",
+      });
+      navigate('/');
+      
     } catch (error) {
       console.error("Error loading project:", error);
-      // Fallback to a new mock project
-      mockProject = {
-        id: projectId || 'default-1',
-        name: 'Sample Project',
-        description: 'A sample project to demonstrate the app',
-        startDate: Date.now(),
-        resources: ['Team Member 1', 'Team Member 2'],
-        data: initialGanttData
-      };
+      navigate('/');
     }
-    
-    // Validate all tasks have proper start and end dates
-    const validatedTasks = mockProject.data.tasks.filter(
-      task => task && typeof task.start === 'number' && typeof task.end === 'number'
-    );
-    
-    // Update the project with validated tasks
-    mockProject.data.tasks = validatedTasks;
-    
-    setProject(mockProject);
-    setGanttData(mockProject.data);
-  }, [projectId]);
-
+  }, [projectId, navigate]);
+  
+  // Add save function
+  const handleSaveProject = () => {
+    if (!project) return;
+  
+    try {
+      const savedProjects = localStorage.getItem('gantt-projects');
+      const projects = savedProjects ? JSON.parse(savedProjects) : [];
+      const updatedProjects = projects.map((p: GanttProject) => 
+        p.id === project.id ? {...project, data: ganttData} : p
+      );
+      localStorage.setItem('gantt-projects', JSON.stringify(updatedProjects));
+      
+      setHasUnsavedChanges(false);
+      toast({
+        title: "Project Saved",
+        description: "All changes have been saved successfully.",
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: "Failed to save project changes.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Update task handlers to set unsaved changes
   const handleTaskUpdate = (updatedTask: GanttTask) => {
     // Check if task starts before project start date
     if (project && updatedTask.start < project.startDate) {
@@ -92,10 +106,10 @@ const ProjectView = () => {
       });
       return;
     }
-    
+
     setGanttData(prev => ({
       ...prev,
-      tasks: prev.tasks.map(task => 
+      tasks: prev.tasks.map(task =>
         task.id === updatedTask.id ? updatedTask : task
       )
     }));
@@ -105,39 +119,30 @@ const ProjectView = () => {
         ...project,
         data: {
           ...project.data,
-          tasks: project.data.tasks.map(task => 
+          tasks: project.data.tasks.map(task =>
             task.id === updatedTask.id ? updatedTask : task
           )
         }
       });
+      console.log("here")
+      setHasUnsavedChanges(true);
     }
-
-    toast({
-      title: "Task Updated",
-      description: `"${updatedTask.name}" has been updated.`,
-      duration: 3000,
-    });
-  };
+  }
 
   const handleTaskCreate = (newTask: GanttTask) => {
-    console.log(newTask)
-    // Check if task starts before project start date
-    console.log(ganttData)
     if (project && newTask.start < project.startDate) {
       toast({
         title: "Task Start Date Error",
         description: "Tasks cannot start before the project start date.",
         variant: "destructive",
       });
-      console.log("djtsdyudyus",newTask.start,project.startDate)
       return;
     }
-    console.log("here")
+
     setGanttData(prev => ({
       ...prev,
       tasks: [...prev.tasks, newTask]
     }));
-    console.log(ganttData)
 
     if (project) {
       setProject({
@@ -147,11 +152,36 @@ const ProjectView = () => {
           tasks: [...project.data.tasks, newTask]
         }
       });
+      setHasUnsavedChanges(true);
     }
 
     toast({
       title: "Task Created",
       description: `"${newTask.name}" has been added to the project.`,
+      duration: 3000,
+    });
+  };
+
+  const handleTaskDelete = (taskId: string) => {
+    setGanttData(prev => ({
+      ...prev,
+      tasks: prev.tasks.filter(task => task.id !== taskId)
+    }));
+
+    if (project) {
+      setProject({
+        ...project,
+        data: {
+          ...project.data,
+          tasks: project.data.tasks.filter(task => task.id !== taskId)
+        }
+      });
+      setHasUnsavedChanges(true);
+    }
+
+    toast({
+      title: "Task Deleted",
+      description: "The task has been removed from the project.",
       duration: 3000,
     });
   };
@@ -170,7 +200,7 @@ const ProjectView = () => {
     // Add a processing message
     const processingMessageId = (Date.now() + 1).toString();
     setChatMessages(prev => [
-      ...prev, 
+      ...prev,
       {
         id: processingMessageId,
         content: "Processing your request...",
@@ -184,10 +214,10 @@ const ProjectView = () => {
     setTimeout(() => {
       try {
         const { updatedData, response } = processChatCommand(content, ganttData);
-        
+
         // Update Gantt data
         setGanttData(updatedData);
-        
+
         // Remove processing message and add response
         setChatMessages(prev => [
           ...prev.filter(msg => msg.id !== processingMessageId),
@@ -211,6 +241,42 @@ const ProjectView = () => {
         ]);
       }
     }, 1000); // Simulate processing time
+  };
+
+  // Add this function after other handlers
+  const handleDownloadJSON = () => {
+    const exportData = {
+      id: project.id,
+      name: project.name,
+      description: project.description,
+      startDate: project.startDate,
+      resources: project.resources,
+      data: {
+        tasks: ganttData.tasks.map(task => ({
+          id: task.id,
+          name: task.name,
+          start: task.start,
+          end: task.end,
+          progress: task.progress,
+          dependencies: task.dependencies,
+          milestone: task.milestone,
+          color: task.color,
+          status: task.status
+        })),
+        categories: ganttData.categories || [] // Include categories array
+      }
+    };
+  
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = window.URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${project?.name || 'gantt-project'}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   };
 
   if (!project) {
@@ -241,10 +307,39 @@ const ProjectView = () => {
               <p className="text-sm text-gray-500">{project.description}</p>
             </div>
           </div>
-          
           <div className="flex items-center space-x-4">
-            <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              <span className="font-medium">{ganttData.tasks.length}</span> Tasks
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                <span className="font-medium">{ganttData.tasks.length}</span> Tasks
+              </div>
+              {hasUnsavedChanges && (
+                <Button
+                  onClick={handleSaveProject}
+                  variant="default"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                  </svg>
+                  Save Changes
+                </Button>
+              )}
+              <Button
+                onClick={handleDownloadJSON}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export JSON
+              </Button>
             </div>
           </div>
         </div>
@@ -262,7 +357,7 @@ const ProjectView = () => {
               Chat
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="gantt" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card className="md:col-span-1">
@@ -273,14 +368,15 @@ const ProjectView = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <TaskActions 
+                  <TaskActions
                     tasks={ganttData.tasks}
                     onTaskUpdate={handleTaskUpdate}
                     onTaskCreate={handleTaskCreate}
+                    onTaskDelete={handleTaskDelete}
                   />
                 </CardContent>
               </Card>
-              
+
               <Card className="md:col-span-3">
                 <CardHeader>
                   <CardTitle>Project Timeline</CardTitle>
@@ -294,7 +390,7 @@ const ProjectView = () => {
               </Card>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="chat" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="md:col-span-1">
@@ -305,13 +401,13 @@ const ProjectView = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ChatInterface 
-                    messages={chatMessages} 
-                    onSendMessage={handleSendMessage} 
+                  <ChatInterface
+                    messages={chatMessages}
+                    onSendMessage={handleSendMessage}
                   />
                 </CardContent>
               </Card>
-              
+
               <Card className="md:col-span-1">
                 <CardHeader>
                   <CardTitle>Project Timeline</CardTitle>

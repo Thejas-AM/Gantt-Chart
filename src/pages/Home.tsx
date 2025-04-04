@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,15 +15,7 @@ const Home = () => {
   const { toast } = useToast();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showNewGanttForm, setShowNewGanttForm] = useState(false);
-  const [projects, setProjects] = useState<GanttProject[]>([
-    {
-      id: '1',
-      name: 'Sample Project',
-      description: 'A sample project to demonstrate the app',
-      startDate: Date.now(),
-      data: initialGanttData
-    }
-  ]);
+  const [projects, setProjects] = useState<GanttProject[]>([]);
 
   const handleLogin = () => {
     // Simulate login process
@@ -34,8 +26,34 @@ const Home = () => {
     });
   };
 
+  // Add this useEffect after the state declarations
+  useEffect(() => {
+    try {
+      const savedProjects = localStorage.getItem('gantt-projects');
+      if (savedProjects) {
+        const parsedProjects = JSON.parse(savedProjects);
+        setProjects(parsedProjects);
+        toast({
+          title: "Projects Loaded",
+          description: `Loaded ${parsedProjects.length} projects from storage`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error Loading Projects",
+        description: "Failed to load saved projects",
+        variant: "destructive",
+      });
+    }
+  }, []);
+
+  // Update handleCreateProject to save to localStorage
   const handleCreateProject = (project: GanttProject) => {
-    setProjects([...projects, project]);
+    setProjects(prev => {
+      const updatedProjects = [...prev, project];
+      localStorage.setItem('gantt-projects', JSON.stringify(updatedProjects));
+      return updatedProjects;
+    });
     setShowNewGanttForm(false);
     toast({
       title: "Project Created",
@@ -47,6 +65,34 @@ const Home = () => {
     // In a real application, we would load the project data here
     // For now, we'll just navigate to the project page
     navigate(`/project/${projectId}`);
+  };
+
+  const handleImportProject = (importedProject: GanttProject) => {
+    try {
+      // Generate a new ID to avoid conflicts
+      const newProject = {
+        ...importedProject
+      };
+
+      // Add the project to state
+      setProjects(prev => [...prev, newProject]);
+
+      // Save to localStorage
+      const existingProjects = JSON.parse(localStorage.getItem('gantt-projects') || '[]');
+      localStorage.setItem('gantt-projects', JSON.stringify([...existingProjects, newProject]));
+
+      toast({
+        title: "Project Imported",
+        description: `Successfully imported project: ${newProject.name}`,
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: "Import Failed",
+        description: "Failed to import project. Please check the file format.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -120,8 +166,9 @@ const Home = () => {
             )}
             
             <GanttList 
-              projects={projects} 
-              onOpenProject={handleOpenProject} 
+              projects={projects}
+              onOpenProject={handleOpenProject}
+              onImportProject={handleImportProject}
             />
           </>
         )}
