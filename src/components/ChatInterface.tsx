@@ -3,19 +3,33 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChatMessage } from '@/types/gantt';
+import { ChatMessage, GanttTask } from '@/types/gantt';
 import { formatDateTime } from '@/utils/dateUtils';
 import { Send, Loader2 } from 'lucide-react';
+import { useChatSuggestions } from '@/hooks/useChatSuggestions';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
   onSendMessage: (content: string) => void;
+  tasks: GanttTask[];
+  useAI?: boolean;
+  onToggleAI: (enabled: boolean) => void;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
+  messages, 
+  onSendMessage, 
+  tasks,
+  useAI = false,
+  onToggleAI 
+}) => {
   const [inputValue, setInputValue] = useState('');
+  const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const suggestions = useChatSuggestions(inputValue, tasks);
 
   // Scroll to bottom whenever messages update
   useEffect(() => {
@@ -35,13 +49,48 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage }
     }
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    setInputValue(suggestion);
+    setSelectedSuggestion(-1);
+    inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (suggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedSuggestion(prev => (prev + 1) % suggestions.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedSuggestion(prev => (prev - 1 + suggestions.length) % suggestions.length);
+      } else if (e.key === 'Enter' && selectedSuggestion >= 0) {
+        e.preventDefault();
+        handleSuggestionClick(suggestions[selectedSuggestion]);
+      } else if (e.key === 'Escape') {
+        setSelectedSuggestion(-1);
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col h-[500px] bg-white rounded-lg shadow-md">
       <div className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-medium">Chat with Gantt</h2>
-        <p className="text-sm text-gray-500">
-          Use natural language to update your project timeline
-        </p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-lg font-medium">Chat with Gantt</h2>
+            <p className="text-sm text-gray-500">
+              Use natural language to update your project timeline
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="ai-mode">AI Mode</Label>
+            <Switch
+              id="ai-mode"
+              checked={useAI}
+              onCheckedChange={onToggleAI}
+            />
+          </div>
+        </div>
       </div>
       
       <ScrollArea className="flex-1 p-4">
@@ -76,17 +125,36 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage }
       </ScrollArea>
       
       <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200">
-        <div className="flex space-x-2">
-          <Input
-            ref={inputRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Type a message to update the Gantt chart..."
-            className="flex-1"
-          />
-          <Button type="submit" disabled={!inputValue.trim()}>
-            <Send className="h-4 w-4" />
-          </Button>
+        <div className="relative flex flex-col">
+          <div className="flex space-x-2">
+            <Input
+              ref={inputRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message to update the Gantt chart..."
+              className="flex-1"
+            />
+            <Button type="submit" disabled={!inputValue.trim()}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {suggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-10">
+              {suggestions.map((suggestion, index) => (
+                <div
+                  key={suggestion}
+                  className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
+                    index === selectedSuggestion ? 'bg-gray-100' : ''
+                  }`}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                >
+                  {suggestion}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </form>
     </div>

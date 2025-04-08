@@ -12,6 +12,7 @@ import { processChatCommand } from '@/utils/chatProcessor';
 import { Calendar, MessageSquare, BarChart2, ArrowLeft } from 'lucide-react';
 import { initialGanttData } from '@/data/initialData';
 import { getCurrentMonday } from '@/utils/dateUtils';
+import { processWithAzureLLM } from '@/services/azureLLM';
 
 const ProjectView = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -186,18 +187,22 @@ const ProjectView = () => {
     });
   };
 
-  const handleSendMessage = (content: string) => {
+  // Add new imports
+  
+  // Add state for AI toggle
+  const [useAI, setUseAI] = useState(false);
+  
+  // Update handleSendMessage function
+  const handleSendMessage = async (content: string) => {
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content,
       sender: 'user',
       timestamp: Date.now()
     };
-
-    // Add user message to chat
+  
     setChatMessages(prev => [...prev, userMessage]);
-
-    // Add a processing message
+  
     const processingMessageId = (Date.now() + 1).toString();
     setChatMessages(prev => [
       ...prev,
@@ -209,41 +214,48 @@ const ProjectView = () => {
         isProcessing: true
       }
     ]);
-
-    // Process the message
-    setTimeout(() => {
-      try {
-        const { updatedData, response } = processChatCommand(content, ganttData);
-
-        // Update Gantt data
-        setGanttData(updatedData);
-
-        // Remove processing message and add response
-        setChatMessages(prev => [
-          ...prev.filter(msg => msg.id !== processingMessageId),
-          {
-            id: (Date.now() + 2).toString(),
-            content: response,
-            sender: 'system',
-            timestamp: Date.now()
-          }
-        ]);
-      } catch (error) {
-        // Remove processing message and add error
-        setChatMessages(prev => [
-          ...prev.filter(msg => msg.id !== processingMessageId),
-          {
-            id: (Date.now() + 2).toString(),
-            content: "Sorry, I couldn't process your request. Please try again.",
-            sender: 'system',
-            timestamp: Date.now()
-          }
-        ]);
+  
+    try {
+      let result;
+      if (useAI) {
+        result = await processWithAzureLLM(content, ganttData);
+      } else {
+        result = processChatCommand(content, ganttData);
       }
-    }, 1000); // Simulate processing time
+  
+      setGanttData(result.updatedData);
+      
+      if (project) {
+        setProject(prev => ({
+          ...prev!,
+          data: result.updatedData
+        }));
+        setHasUnsavedChanges(true);
+      }
+  
+      setChatMessages(prev => [
+        ...prev.filter(msg => msg.id !== processingMessageId),
+        {
+          id: (Date.now() + 2).toString(),
+          content: result.response,
+          sender: 'system',
+          timestamp: Date.now()
+        }
+      ]);
+    } catch (error) {
+      setChatMessages(prev => [
+        ...prev.filter(msg => msg.id !== processingMessageId),
+        {
+          id: (Date.now() + 2).toString(),
+          content: error instanceof Error ? error.message : "Sorry, I couldn't process your request. Please try again.",
+          sender: 'system',
+          timestamp: Date.now()
+        }
+      ]);
+    }
   };
+  
 
-  // Add this function after other handlers
   const handleDownloadJSON = () => {
     const exportData = {
       id: project.id,
@@ -404,6 +416,9 @@ const ProjectView = () => {
                   <ChatInterface
                     messages={chatMessages}
                     onSendMessage={handleSendMessage}
+                    tasks={ganttData.tasks}
+                    useAI={useAI}
+                    onToggleAI={setUseAI}
                   />
                 </CardContent>
               </Card>

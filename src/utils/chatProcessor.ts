@@ -273,3 +273,36 @@ export const processChatCommand = (
 
   return { updatedData, response };
 };
+
+// Add this function at the top of the file
+export const getChatSuggestions = (input: string, tasks: GanttTask[]): string[] => {
+  input = input.toLowerCase();
+  const suggestions: string[] = [];
+
+  const commands = [
+    'add task "Task Name" from day 1 to day 5',
+    'update task "Task Name" progress to 50%',
+    'extend task "Task Name" by 5 days',
+    'delete task "Task Name"',
+    'add milestone "Milestone Name" on day 10',
+    'add dependency from "Task A" to "Task B"'
+  ];
+
+  if (input.startsWith('add')) {
+    suggestions.push(...commands.filter(cmd => cmd.startsWith('add')));
+  } else if (input.startsWith('update')) {
+    suggestions.push(...tasks.map(task => `update task "${task.name}" progress to `));
+  } else if (input.startsWith('extend')) {
+    suggestions.push(...tasks.map(task => `extend task "${task.name}" by `));
+  } else if (input.startsWith('delete')) {
+    suggestions.push(...tasks.map(task => `delete task "${task.name}"`));
+  } else if (input.includes('task') && tasks.length > 0) {
+    suggestions.push(...tasks.map(task => `"${task.name}"`));
+  } else {
+    suggestions.push(...commands);
+  }
+
+  return suggestions
+    .filter(suggestion => suggestion.toLowerCase().includes(input))
+    .slice(0, 5);
+};
