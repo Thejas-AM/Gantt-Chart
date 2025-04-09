@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,11 +7,11 @@ import { useToast } from "@/components/ui/use-toast";
 import GanttChart from '@/components/GanttChart';
 import ChatInterface from '@/components/ChatInterface';
 import TaskActions from '@/components/TaskActions';
+import { useBlocker } from 'react-router-dom';
 import { GanttData, GanttTask, ChatMessage, GanttProject } from '@/types/gantt';
 import { processChatCommand } from '@/utils/chatProcessor';
 import { Calendar, MessageSquare, BarChart2, ArrowLeft } from 'lucide-react';
 import { initialGanttData } from '@/data/initialData';
-import { getCurrentMonday } from '@/utils/dateUtils';
 import { processWithAzureLLM, processWithLocalLLM } from '@/services/azureLLM';
 
 const ProjectView = () => {
@@ -68,6 +68,22 @@ const ProjectView = () => {
       navigate('/');
     }
   }, [projectId, navigate]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        // Modern browsers will show a confirmation dialog without needing returnValue
+        return 'Changes you made may not be saved.';
+      }
+    };
+  
+    window.addEventListener('beforeunload', handleBeforeUnload);
+  
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
   
   // Add save function
   const handleSaveProject = () => {
@@ -186,8 +202,6 @@ const ProjectView = () => {
       duration: 3000,
     });
   };
-
-  // Add new imports
   
   // Add state for AI toggle
   const [useAI, setUseAI] = useState(false);
@@ -296,6 +310,33 @@ const ProjectView = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleBackClick = () => {
+    navigate('/projects');
+  };
+  
+
+  const blocker = useBlocker(
+  ({ currentLocation, nextLocation }) => 
+    hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname
+  );
+  
+  useEffect(() => {
+    if (blocker.state === "blocked" && !hasUnsavedChanges) {
+      blocker.reset();
+    }
+  
+    if (blocker.state === "blocked") {
+      const proceed = window.confirm('You have unsaved changes. Are you sure you want to leave?');
+      if (proceed) {
+        blocker.proceed();
+      } else {
+        blocker.reset();
+      }
+    }
+  }, [blocker, hasUnsavedChanges]);
+  
+  // Update the back button in the return JSX
+
   if (!project) {
     return (
       <div className="p-8 text-center">
@@ -313,7 +354,7 @@ const ProjectView = () => {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="mr-4">
+            <Button variant="ghost" size="sm" onClick={handleBackClick} className="mr-4">
               <ArrowLeft className="h-4 w-4 mr-2" /> Back
             </Button>
             <div>
