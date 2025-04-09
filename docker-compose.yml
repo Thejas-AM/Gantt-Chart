@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_ORIGINS=*
+    command: serve
+    # After container starts, run in terminal:
+    # docker exec -it gantt-chart-ollama-1 ollama pull mistral
+
+  frontend:
+    image: node:18
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "8080:8080"
+    command: >
+      sh -c "npm install &&
+             npm run dev -- --host"
+    env_file:
+      - .env.docker
+    depends_on:
+      - ollama
+
+volumes:
+  ollama_data:

@@ -16,6 +16,8 @@ interface ChatInterfaceProps {
   tasks: GanttTask[];
   useAI?: boolean;
   onToggleAI: (enabled: boolean) => void;
+  modelType: 'azure' | 'local';
+  onModelChange: (type: 'azure' | 'local') => void;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
@@ -23,7 +25,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage, 
   tasks,
   useAI = false,
-  onToggleAI 
+  onToggleAI,
+  modelType,
+  onModelChange
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
@@ -82,13 +86,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               Use natural language to update your project timeline
             </p>
           </div>
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="ai-mode">AI Mode</Label>
-            <Switch
-              id="ai-mode"
-              checked={useAI}
-              onCheckedChange={onToggleAI}
-            />
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="model-select">Model</Label>
+              <select
+                id="model-select"
+                value={modelType}
+                onChange={(e) => onModelChange(e.target.value as 'azure' | 'local')}
+                className="rounded-md border border-gray-300 px-2 py-1"
+              >
+                <option value="azure">Azure OpenAI</option>
+                <option value="local">Local LLM</option>
+              </select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="ai-mode">AI Mode</Label>
+              <Switch
+                id="ai-mode"
+                checked={useAI}
+                onCheckedChange={onToggleAI}
+              />
+            </div>
           </div>
         </div>
       </div>

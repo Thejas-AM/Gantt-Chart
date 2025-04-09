@@ -12,7 +12,7 @@ import { processChatCommand } from '@/utils/chatProcessor';
 import { Calendar, MessageSquare, BarChart2, ArrowLeft } from 'lucide-react';
 import { initialGanttData } from '@/data/initialData';
 import { getCurrentMonday } from '@/utils/dateUtils';
-import { processWithAzureLLM } from '@/services/azureLLM';
+import { processWithAzureLLM, processWithLocalLLM } from '@/services/azureLLM';
 
 const ProjectView = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -192,6 +192,9 @@ const ProjectView = () => {
   // Add state for AI toggle
   const [useAI, setUseAI] = useState(false);
   
+  // Add this near other state declarations
+  const [modelType, setModelType] = useState<'azure' | 'local'>('azure');
+  
   // Update handleSendMessage function
   const handleSendMessage = async (content: string) => {
     const userMessage: ChatMessage = {
@@ -218,7 +221,9 @@ const ProjectView = () => {
     try {
       let result;
       if (useAI) {
-        result = await processWithAzureLLM(content, ganttData);
+        result = modelType === 'azure' 
+          ? await processWithAzureLLM(content, ganttData)
+          : await processWithLocalLLM(content, ganttData);
       } else {
         result = processChatCommand(content, ganttData);
       }
@@ -413,12 +418,15 @@ const ProjectView = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  // Update the ChatInterface usage
                   <ChatInterface
                     messages={chatMessages}
                     onSendMessage={handleSendMessage}
                     tasks={ganttData.tasks}
                     useAI={useAI}
                     onToggleAI={setUseAI}
+                    modelType={modelType}
+                    onModelChange={setModelType}
                   />
                 </CardContent>
               </Card>

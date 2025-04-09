@@ -12,8 +12,6 @@ dist
 dist-ssr
 *.local
 
-test.ipynb
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -26,6 +24,13 @@ test.ipynb
 *.sw?
 
 # Environment variables
+# Environment files
 .env
+.env.docker
 .env.local
 .env.*.local
+
+
+# Test files
+test copy.ipynb
+*.ipynb_checkpoints/
