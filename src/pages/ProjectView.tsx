@@ -13,6 +13,7 @@ import { processChatCommand } from '@/utils/chatProcessor';
 import { Calendar, MessageSquare, BarChart2, ArrowLeft, Download, Save } from 'lucide-react';
 import { initialGanttData } from '@/data/initialData';
 import { processWithAzureLLM, processWithLocalLLM } from '@/services/azureLLM';
+import { sortGanttTasks } from '@/utils/sortUtils';
 
 const ProjectView = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -49,8 +50,19 @@ const ProjectView = () => {
         const currentProject = projects.find((p: GanttProject) => p.id === projectId);
         
         if (currentProject) {
-          setProject(currentProject);
-          setGanttData(currentProject.data);
+          // Sort tasks before setting project and ganttData
+          const sortedTasks = sortGanttTasks(currentProject.data.tasks);
+          setProject({
+            ...currentProject,
+            data: {
+              ...currentProject.data,
+              tasks: sortedTasks
+            }
+          });
+          setGanttData({
+            ...currentProject.data,
+            tasks: sortedTasks
+          });
           return;
         }
       }
@@ -114,7 +126,6 @@ const ProjectView = () => {
   
   // Update task handlers to set unsaved changes
   const handleTaskUpdate = (updatedTask: GanttTask) => {
-    // Check if task starts before project start date
     if (project && updatedTask.start < project.startDate) {
       toast({
         title: "Task Start Date Error",
@@ -126,9 +137,9 @@ const ProjectView = () => {
 
     setGanttData(prev => ({
       ...prev,
-      tasks: prev.tasks.map(task =>
+      tasks: sortGanttTasks(prev.tasks.map(task =>
         task.id === updatedTask.id ? updatedTask : task
-      )
+      ))
     }));
 
     if (project) {
@@ -136,17 +147,16 @@ const ProjectView = () => {
         ...project,
         data: {
           ...project.data,
-          tasks: project.data.tasks.map(task =>
+          tasks: sortGanttTasks(project.data.tasks.map(task =>
             task.id === updatedTask.id ? updatedTask : task
-          )
+          ))
         }
       });
-      console.log("here")
       setHasUnsavedChanges(true);
     }
   }
-
   const handleTaskCreate = (newTask: GanttTask) => {
+    console.log(project,newTask.start)
     if (project && newTask.start < project.startDate) {
       toast({
         title: "Task Start Date Error",
@@ -156,18 +166,24 @@ const ProjectView = () => {
       return;
     }
 
-    setGanttData(prev => ({
-      ...prev,
-      tasks: [...prev.tasks, newTask]
-    }));
+    setGanttData(prev => {
+      const updatedTasks = sortGanttTasks([...prev.tasks, newTask]);
+      return {
+        ...prev,
+        tasks: updatedTasks
+      };
+    });
 
     if (project) {
-      setProject({
-        ...project,
-        data: {
-          ...project.data,
-          tasks: [...project.data.tasks, newTask]
-        }
+      setProject(prev => {
+        const updatedTasks = sortGanttTasks([...prev!.data.tasks, newTask]);
+        return {
+          ...prev!,
+          data: {
+            ...prev!.data,
+            tasks: updatedTasks
+          }
+        };
       });
       setHasUnsavedChanges(true);
     }
@@ -242,12 +258,18 @@ const ProjectView = () => {
         result = processChatCommand(content, ganttData);
       }
   
-      setGanttData(result.updatedData);
+      // Sort the tasks from LLM response
+      const sortedData = {
+        ...result.updatedData,
+        tasks: sortGanttTasks(result.updatedData.tasks)
+      };
+  
+      setGanttData(sortedData);
       
       if (project) {
         setProject(prev => ({
           ...prev!,
-          data: result.updatedData
+          data: sortedData
         }));
         setHasUnsavedChanges(true);
       }

@@ -201,8 +201,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
                 <SelectItem value="none">None</SelectItem>
                 <SelectItem value="custom">Create New Parent</SelectItem>
                 {tasks.map((task) => (
-                  <SelectItem key={task.id} value={task.id}>
-                    {task.name}
+                  <SelectItem key={task.id} value={task.parent}>
+                    {task.parent}
                   </SelectItem>
                 ))}
               </SelectContent>
