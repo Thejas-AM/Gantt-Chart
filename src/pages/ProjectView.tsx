@@ -350,143 +350,137 @@ const ProjectView = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <div className="flex items-center">
-            <Button variant="ghost" size="sm" onClick={handleBackClick} className="mr-4">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Back
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                <Calendar className="mr-2 h-6 w-6 text-primary" />
-                {project.name}
-              </h1>
-              <p className="text-sm text-gray-500">{project.description}</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                <span className="font-medium">{ganttData.tasks.length}</span> Tasks
-              </div>
-              {hasUnsavedChanges && (
-                <Button
-                  onClick={handleSaveProject}
-                  variant="default"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                    <polyline points="17 21 17 13 7 13 7 21"/>
-                    <polyline points="7 3 7 8 15 8"/>
-                  </svg>
-                  Save Changes
-                </Button>
-              )}
-              <Button
-                onClick={handleDownloadJSON}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                Export JSON
-              </Button>
-            </div>
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center">
+          <Button variant="ghost" size="sm" onClick={handleBackClick} className="mr-4">
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back
+          </Button>
+          <div>
+            <h2 className="text-2xl font-semibold flex items-center">
+              <Calendar className="mr-2 h-6 w-6 text-primary" />
+              {project.name}
+            </h2>
+            <p className="text-sm text-gray-500">{project.description}</p>
           </div>
         </div>
-      </header>
+        <div className="flex items-center space-x-4">
+          <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+            <span className="font-medium">{ganttData.tasks.length}</span> Tasks
+          </div>
+          {hasUnsavedChanges && (
+            <Button
+              onClick={handleSaveProject}
+              variant="default"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              Save Changes
+            </Button>
+          )}
+          <Button
+            onClick={handleDownloadJSON}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Export JSON
+          </Button>
+        </div>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-        <Tabs defaultValue="gantt" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="gantt" className="flex items-center">
-              <BarChart2 className="mr-2 h-4 w-4" />
-              Gantt Chart
-            </TabsTrigger>
-            <TabsTrigger value="chat" className="flex items-center">
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Chat
-            </TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="gantt" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="gantt" className="flex items-center">
+            <BarChart2 className="mr-2 h-4 w-4" />
+            Gantt Chart
+          </TabsTrigger>
+          <TabsTrigger value="chat" className="flex items-center">
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Chat
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="gantt" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="md:col-span-1">
-                <CardHeader>
-                  <CardTitle>Task Actions</CardTitle>
-                  <CardDescription>
-                    Edit task details or create new tasks
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <TaskActions
-                    tasks={ganttData.tasks}
-                    onTaskUpdate={handleTaskUpdate}
-                    onTaskCreate={handleTaskCreate}
-                    onTaskDelete={handleTaskDelete}
-                  />
-                </CardContent>
-              </Card>
+        <TabsContent value="gantt" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="md:col-span-1">
+              <CardHeader>
+                <CardTitle>Task Actions</CardTitle>
+                <CardDescription>
+                  Edit task details or create new tasks
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TaskActions
+                  tasks={ganttData.tasks}
+                  onTaskUpdate={handleTaskUpdate}
+                  onTaskCreate={handleTaskCreate}
+                  onTaskDelete={handleTaskDelete}
+                />
+              </CardContent>
+            </Card>
 
-              <Card className="md:col-span-3">
-                <CardHeader>
-                  <CardTitle>Project Timeline</CardTitle>
-                  <CardDescription>
-                    Drag tasks to adjust dates or resize them to change duration
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <GanttChart data={ganttData} onTaskUpdate={handleTaskUpdate} />
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+            <Card className="md:col-span-3">
+              <CardHeader>
+                <CardTitle>Project Timeline</CardTitle>
+                <CardDescription>
+                  Drag tasks to adjust dates or resize them to change duration
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <GanttChart data={ganttData} onTaskUpdate={handleTaskUpdate} />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
-          <TabsContent value="chat" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="md:col-span-1">
-                <CardHeader>
-                  <CardTitle>Chat Interface</CardTitle>
-                  <CardDescription>
-                    Use natural language to update your project
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  // Update the ChatInterface usage
-                  <ChatInterface
-                    messages={chatMessages}
-                    onSendMessage={handleSendMessage}
-                    tasks={ganttData.tasks}
-                    useAI={useAI}
-                    onToggleAI={setUseAI}
-                    modelType={modelType}
-                    onModelChange={setModelType}
-                  />
-                </CardContent>
-              </Card>
+        <TabsContent value="chat" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="md:col-span-1">
+              <CardHeader>
+                <CardTitle>Chat Interface</CardTitle>
+                <CardDescription>
+                  Use natural language to update your project
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                // Update the ChatInterface usage
+                <ChatInterface
+                  messages={chatMessages}
+                  onSendMessage={handleSendMessage}
+                  tasks={ganttData.tasks}
+                  useAI={useAI}
+                  onToggleAI={setUseAI}
+                  modelType={modelType}
+                  onModelChange={setModelType}
+                />
+              </CardContent>
+            </Card>
 
-              <Card className="md:col-span-1">
-                <CardHeader>
-                  <CardTitle>Project Timeline</CardTitle>
-                  <CardDescription>
-                    Updates in real-time as you chat
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <GanttChart data={ganttData} onTaskUpdate={handleTaskUpdate} />
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </main>
+            <Card className="md:col-span-1">
+              <CardHeader>
+                <CardTitle>Project Timeline</CardTitle>
+                <CardDescription>
+                  Updates in real-time as you chat
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <GanttChart data={ganttData} onTaskUpdate={handleTaskUpdate} />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
