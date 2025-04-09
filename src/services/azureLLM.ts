@@ -22,6 +22,7 @@ const systemPrompt = `You are a Gantt chart task manager. Follow these rules exa
       "dependencies": string[] (keep existing unless asked to change),
       "milestone": boolean (true/false),
       "color": "string (hex color like #FF0000)"
+      "parent": "string (keep existing unless asked to change)",
     }
   ],
   "message": "string (brief response about what changed)"

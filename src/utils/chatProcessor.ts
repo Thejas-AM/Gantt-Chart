@@ -75,7 +75,8 @@ export const processChatCommand = (
           end: dateToTimestamp(endDate),
           progress: 0,
           dependencies: [],
-          color: '#6366F1'
+          color: '#6366F1',
+          parent: ''
         };
         
         updatedData.tasks.push(newTask);
@@ -220,7 +221,8 @@ export const processChatCommand = (
           progress: 0,
           milestone: true,
           dependencies: [],
-          color: '#F59E0B'
+          color: '#F59E0B',
+          parent: ''
         };
         
         updatedData.tasks.push(newMilestone);

@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from './ui/use-toast';
 
 interface TaskFormProps {
   onTaskCreate: (task: GanttTask) => void;
@@ -23,51 +24,83 @@ interface TaskFormProps {
 
 const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks = [] }) => {
   const defaultStartDate = getCurrentMonday();
-  
+
   const [taskName, setTaskName] = useState('');
   const [startDate, setStartDate] = useState<Date>(defaultStartDate);
   const [duration, setDuration] = useState(5);
   const [progress, setProgress] = useState(0);
   const [dependency, setDependency] = useState('none'); // Changed from '' to 'none'
   const [color, setColor] = useState('#6366F1');
+  const { toast } = useToast();
 
   const handleProgressIncrement = (amount: number) => {
     const newProgress = Math.min(100, Math.max(0, progress + amount));
     setProgress(newProgress);
   };
 
+  // Add new state for parent
+  const [parent, setParent] = useState('none');
+  const [customParent, setCustomParent] = useState('');
+  const [isCustomParent, setIsCustomParent] = useState(false);
+
+  // In the form, add after the dependency section
+
+
+  // Update the handleSubmit function
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!taskName.trim()) {
-      return; // Don't submit if task name is empty
+      return;
     }
-    
+
+    // Add parent validation
+    if (parent === 'none' && !isCustomParent) {
+      toast({
+        title: "Parent Required",
+        description: "Please select or create a parent task",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isCustomParent && !customParent.trim()) {
+      toast({
+        title: "Parent Required",
+        description: "Please enter a parent task name",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newTask: GanttTask = {
-      id: `task${Date.now()}`, // Generate a unique ID based on timestamp
+      id: `task${Date.now()}`,
       name: taskName,
       start: dateToTimestamp(startDate),
       end: dateToTimestamp(addDays(startDate, duration)),
       progress: progress,
       color: color,
       status: progress === 0 ? 'not-started' : progress === 100 ? 'completed' : 'in-progress',
-      dependencies: dependency !== 'none' ? [dependency] : [], // Changed from '' to 'none'
+      dependencies: dependency !== 'none' ? [dependency] : [],
+      parent: isCustomParent ? customParent : parent,  // Removed the undefined case
     };
-    console.log(newTask)
-    
+    console.log(newTask);
+
     onTaskCreate(newTask);
-    // Reset form
+    // Reset form including new fields
     setTaskName('');
     setStartDate(defaultStartDate);
     setDuration(5);
     setProgress(0);
-    setDependency('none'); // Changed from '' to 'none'
+    setDependency('none');
     setColor('#6366F1');
-    console.log("djdg")
-    
+    setParent('none');
+    setCustomParent('');
+    setIsCustomParent(false);
+
     onClose();
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -77,7 +110,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
             Fill in the details to add a new task to your project.
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="taskName">Task Name</Label>
@@ -89,7 +122,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
               required
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Start Date</Label>
@@ -118,7 +151,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
                 </PopoverContent>
               </Popover>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="duration">Duration</Label>
               <Input
@@ -131,11 +164,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
               <p className="text-xs text-gray-500">Days</p>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="dependency">Dependency</Label>
-            <Select 
-              value={dependency} 
+            <Select
+              value={dependency}
               onValueChange={setDependency}
             >
               <SelectTrigger>
@@ -151,7 +184,41 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
               </SelectContent>
             </Select>
           </div>
-          
+          <div className="space-y-2">
+            <Label htmlFor="parent">Parent Task *</Label>
+            <Select
+              value={parent}
+              onValueChange={(value) => {
+                setParent(value);
+                setIsCustomParent(value === 'custom');
+              }}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select or create parent task (required)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="custom">Create New Parent</SelectItem>
+                {tasks.map((task) => (
+                  <SelectItem key={task.id} value={task.id}>
+                    {task.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {isCustomParent && (
+              <div className="mt-2">
+                <Input
+                  placeholder="Enter new parent task name"
+                  value={customParent}
+                  onChange={(e) => setCustomParent(e.target.value)}
+                  required={isCustomParent}
+                />
+              </div>
+            )}
+          </div>
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <Label>Progress</Label>
@@ -159,45 +226,45 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
             </div>
             <Progress value={progress} className="h-2" />
             <div className="flex items-center justify-between mt-2">
-              <Button 
+              <Button
                 type="button"
-                variant="outline" 
-                size="sm" 
+                variant="outline"
+                size="sm"
                 onClick={() => handleProgressIncrement(-5)}
                 disabled={progress <= 0}
               >
                 <CircleMinus className="h-4 w-4" />
               </Button>
               <div className="space-x-1">
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
-                  size="sm" 
+                  variant="outline"
+                  size="sm"
                   onClick={() => setProgress(0)}
                 >
                   0%
                 </Button>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
-                  size="sm" 
+                  variant="outline"
+                  size="sm"
                   onClick={() => setProgress(50)}
                 >
                   50%
                 </Button>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
-                  size="sm" 
+                  variant="outline"
+                  size="sm"
                   onClick={() => setProgress(100)}
                 >
                   100%
                 </Button>
               </div>
-              <Button 
+              <Button
                 type="button"
-                variant="outline" 
-                size="sm" 
+                variant="outline"
+                size="sm"
                 onClick={() => handleProgressIncrement(5)}
                 disabled={progress >= 100}
               >
@@ -205,7 +272,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
               </Button>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="color">Task Color</Label>
             <div className="flex items-center space-x-2">
@@ -219,7 +286,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
               <span className="text-sm text-gray-500">{color}</span>
             </div>
           </div>
-          
+
           <div className="flex justify-end mt-4">
             <Button type="submit">
               <Check className="h-4 w-4 mr-2" /> Create Task

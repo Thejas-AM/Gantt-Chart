@@ -31,6 +31,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ data, onTaskUpdate }) => {
       y: validTasks.findIndex(t => t.id === task.id),
       milestone: task.milestone || false,
       dependency: task.dependencies,
+      parent: task.parent,
       completed: {
         amount: task.progress / 100
       },
@@ -116,6 +117,17 @@ const GanttChart: React.FC<GanttChartProps> = ({ data, onTaskUpdate }) => {
       grid: {
         borderColor: '#E5E7EB',
         columns: [{
+          title: {
+            text: 'Feature',
+            style: {
+              fontWeight: 'bold'
+            }
+          },
+          labels: {
+            format: '{point.parent}'
+          }
+        },
+        {
           title: {
             text: 'Task',
             style: {
