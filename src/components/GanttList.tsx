@@ -33,23 +33,33 @@ const GanttList: React.FC<GanttListProps> = ({ projects, onOpenProject }) => {
         return (
           <Card key={project.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-lg">{project.name}</CardTitle>
-                <Badge variant={progressPercentage === 100 ? "success" : "default"}>
+              <div className="flex justify-between items-start gap-2">
+                <CardTitle 
+                  className="text-lg truncate max-w-[70%] cursor-default" 
+                  title={project.name}
+                >
+                  {project.name}
+                </CardTitle>
+                <Badge variant={progressPercentage === 100 ? "success" : "default"} className="shrink-0">
                   {progressPercentage}% Complete
                 </Badge>
               </div>
-              <CardDescription>{project.description}</CardDescription>
+              <CardDescription 
+                className="line-clamp-2 min-h-[40px] cursor-default"
+                title={project.description}
+              >
+                {project.description}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center text-muted-foreground">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Started: {format(new Date(project.startDate), 'PPP')}
+                  <Calendar className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="truncate">{format(new Date(project.startDate), 'PPP')}</span>
                 </div>
                 <div className="flex items-center text-muted-foreground">
-                  <Clock className="mr-2 h-4 w-4" />
-                  {taskCount} tasks ({completedTasks} completed)
+                  <Clock className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="truncate">{taskCount} tasks ({completedTasks} completed)</span>
                 </div>
               </div>
             </CardContent>

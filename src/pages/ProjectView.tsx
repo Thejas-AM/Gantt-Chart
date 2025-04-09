@@ -10,7 +10,7 @@ import TaskActions from '@/components/TaskActions';
 import { useBlocker } from 'react-router-dom';
 import { GanttData, GanttTask, ChatMessage, GanttProject } from '@/types/gantt';
 import { processChatCommand } from '@/utils/chatProcessor';
-import { Calendar, MessageSquare, BarChart2, ArrowLeft } from 'lucide-react';
+import { Calendar, MessageSquare, BarChart2, ArrowLeft, Download, Save } from 'lucide-react';
 import { initialGanttData } from '@/data/initialData';
 import { processWithAzureLLM, processWithLocalLLM } from '@/services/azureLLM';
 
@@ -351,20 +351,22 @@ const ProjectView = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-start mb-6">
         <div className="flex items-center">
-          <Button variant="ghost" size="sm" onClick={handleBackClick} className="mr-4">
+          <Button variant="ghost" size="sm" onClick={handleBackClick} className="mr-4 shrink-0">
             <ArrowLeft className="h-4 w-4 mr-2" /> Back
           </Button>
-          <div>
-            <h2 className="text-2xl font-semibold flex items-center">
-              <Calendar className="mr-2 h-6 w-6 text-primary" />
+          <div className="min-w-0">
+            <h2 className="text-2xl font-semibold flex items-center truncate" title={project.name}>
+              <Calendar className="mr-2 h-6 w-6 text-primary shrink-0" />
               {project.name}
             </h2>
-            <p className="text-sm text-gray-500">{project.description}</p>
+            <p className="text-sm text-gray-500 truncate" title={project.description}>
+              {project.description}
+            </p>
           </div>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 shrink-0">
           <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
             <span className="font-medium">{ganttData.tasks.length}</span> Tasks
           </div>
@@ -375,11 +377,7 @@ const ProjectView = () => {
               size="sm"
               className="flex items-center gap-2"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                <polyline points="17 21 17 13 7 13 7 21"/>
-                <polyline points="7 3 7 8 15 8"/>
-              </svg>
+              <Save className="h-4 w-4" />
               Save Changes
             </Button>
           )}
@@ -389,11 +387,7 @@ const ProjectView = () => {
             size="sm"
             className="flex items-center gap-2"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
+            <Download className="h-4 w-4" />
             Export JSON
           </Button>
         </div>

@@ -7,6 +7,8 @@ import { Plus, List } from 'lucide-react';
 import GanttList from '@/components/GanttList';
 import NewGanttForm from '@/components/NewGanttForm';
 import { GanttProject } from '@/types/gantt';
+import CreateProject from '@/components/CreateProject';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const ProjectList = () => {
   const navigate = useNavigate();
@@ -96,13 +98,13 @@ const ProjectList = () => {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold flex items-center">
-          <List className="mr-2 h-6 w-6 text-primary" />
+    <div className="max-w-5xl mx-auto">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold flex items-center">
+          <List className="mr-2 h-5 w-5 text-primary" />
           Your Projects
         </h2>
-        <div className="flex gap-4">
+        <div className="flex gap-2">
           <input
             type="file"
             accept=".json"
@@ -112,32 +114,25 @@ const ProjectList = () => {
           />
           <Button
             variant="outline"
+            size="sm"
             onClick={() => document.getElementById('project-import')?.click()}
           >
             Import Project
           </Button>
-          <Button onClick={() => setShowNewGanttForm(true)}>
-            <Plus className="mr-2 h-4 w-4" /> New Project
+          <Button size="sm" onClick={() => setShowNewGanttForm(true)}>
+            <Plus className="mr-1 h-4 w-4" /> New Project
           </Button>
         </div>
       </div>
 
-      {showNewGanttForm && (
-        <Card className="mb-6 border-2 border-primary/20">
-          <CardHeader>
-            <CardTitle>Create New Project</CardTitle>
-            <CardDescription>
-              Fill in the details to create a new Gantt chart project
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <NewGanttForm 
-              onSubmit={handleCreateProject} 
-              onCancel={() => setShowNewGanttForm(false)} 
-            />
-          </CardContent>
-        </Card>
-      )}
+      <Dialog open={showNewGanttForm} onOpenChange={setShowNewGanttForm}>
+        <DialogContent className="sm:max-w-[600px]">
+          <CreateProject 
+            onSubmit={handleCreateProject}
+            onCancel={() => setShowNewGanttForm(false)}
+          />
+        </DialogContent>
+      </Dialog>
       
       <GanttList 
         projects={projects}

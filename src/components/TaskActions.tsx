@@ -81,7 +81,7 @@ const TaskActions: React.FC<TaskActionsProps> = ({
       />
 
       {/* Scrollable task list with fixed height */}
-      <div className="space-y-2 overflow-y-auto h-[calc(100vh-400px)] pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100">
+      <div className="space-y-2 overflow-y-auto h-[calc(100vh-490px)] pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100">
         {tasks.map((task) => (
           <div
             key={task.id}
@@ -129,60 +129,41 @@ const TaskActions: React.FC<TaskActionsProps> = ({
                           <span className="text-sm text-gray-500">{editedProgress}%</span>
                         </div>
                         <Progress value={editedProgress} className="h-2" />
-                        <div className="flex items-center justify-between mt-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleProgressIncrement(-5)}
-                            disabled={editedProgress <= 0}
-                          >
-                            <CircleMinus className="h-4 w-4" />
-                          </Button>
-                          <div className="space-x-1">
+                        <div className="space-y-3 mt-3">
+                          {/* Quick select buttons */}
+                          <div className="grid grid-cols-5 gap-1">
+                            {[0, 25, 50, 75, 100].map((value) => (
+                              <Button
+                                key={value}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditedProgress(value)}
+                                className={`${editedProgress === value ? 'bg-primary/10' : ''}`}
+                              >
+                                {value}%
+                              </Button>
+                            ))}
+                          </div>
+                          {/* Fine-tune controls */}
+                          <div className="flex items-center justify-between">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setEditedProgress(0)}
+                              onClick={() => handleProgressIncrement(-5)}
+                              disabled={editedProgress <= 0}
                             >
-                              0%
+                              <CircleMinus className="h-4 w-4" />
                             </Button>
+                            <span className="text-sm font-medium">{editedProgress}%</span>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setEditedProgress(25)}
+                              onClick={() => handleProgressIncrement(5)}
+                              disabled={editedProgress >= 100}
                             >
-                              25%
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setEditedProgress(50)}
-                            >
-                              50%
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setEditedProgress(75)}
-                            >
-                              75%
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setEditedProgress(100)}
-                            >
-                              100%
+                              <CirclePlus className="h-4 w-4" />
                             </Button>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleProgressIncrement(5)}
-                            disabled={editedProgress >= 100}
-                          >
-                            <CirclePlus className="h-4 w-4" />
-                          </Button>
                         </div>
                       </div>
                     </div>
