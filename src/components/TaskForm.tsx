@@ -200,11 +200,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
                 <SelectItem value="custom">Create New Parent</SelectItem>
-                {tasks.map((task) => (
-                  <SelectItem key={task.id} value={task.parent}>
-                    {task.parent}
-                  </SelectItem>
-                ))}
+                {Array.from(new Set(tasks.map(task => task.parent)))
+                  .filter(parent => parent && parent !== 'none') // Filter out null/undefined/none
+                  .map((parentName) => (
+                    <SelectItem key={parentName} value={parentName}>
+                      {parentName}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
 

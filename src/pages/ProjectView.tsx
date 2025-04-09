@@ -14,6 +14,7 @@ import { Calendar, MessageSquare, BarChart2, ArrowLeft, Download, Save } from 'l
 import { initialGanttData } from '@/data/initialData';
 import { processWithAzureLLM, processWithLocalLLM } from '@/services/azureLLM';
 import { sortGanttTasks } from '@/utils/sortUtils';
+import { exportToCSV } from '@/utils/exportUtils';
 
 const ProjectView = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -412,6 +413,13 @@ const ProjectView = () => {
           >
             <Download className="h-4 w-4" />
             Export JSON
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => exportToCSV(ganttData)}
+            className="ml-2"
+          >
+            Export to CSV
           </Button>
         </div>
       </div>
