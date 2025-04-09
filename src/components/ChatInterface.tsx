@@ -79,33 +79,37 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   return (
     <div className="flex flex-col h-[500px] bg-white rounded-lg shadow-md">
       <div className="p-4 border-b border-gray-200">
-        <div className="flex justify-between items-center">
-          <div>
+        <div className="flex justify-between items-center gap-2">
+          <div className='flex gap-1 flex-col'>
             <h2 className="text-lg font-medium">Chat with Gantt</h2>
             <p className="text-sm text-gray-500">
               Use natural language to update your project timeline
             </p>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="model-select">Model</Label>
-              <select
-                id="model-select"
-                value={modelType}
-                onChange={(e) => onModelChange(e.target.value as 'azure' | 'local')}
-                className="rounded-md border border-gray-300 px-2 py-1"
-              >
-                <option value="azure">Azure OpenAI</option>
-                <option value="local">Local LLM</option>
-              </select>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="ai-mode">AI Mode</Label>
-              <Switch
-                id="ai-mode"
-                checked={useAI}
-                onCheckedChange={onToggleAI}
-              />
+          <div className="flex flex-col gap-2 space-x-4">
+            <div className="flex flex-col gap-2 min-h-[80px]">
+              <div className="flex items-center gap-2 min-w-[150px]">
+                <Label htmlFor="ai-mode">AI Mode</Label>
+                <Switch
+                  id="ai-mode"
+                  checked={useAI}
+                  onCheckedChange={onToggleAI}
+                />
+              </div>
+              <div className={`transition-all duration-200 ${useAI ? 'opacity-100 max-h-[40px]' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="model-select">Model</Label>
+                  <select
+                    id="model-select"
+                    value={modelType}
+                    onChange={(e) => onModelChange(e.target.value as 'azure' | 'local')}
+                    className="rounded-md border border-gray-300 px-2 py-1"
+                  >
+                    <option value="azure">Azure OpenAI</option>
+                    <option value="local">Local LLM</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
         </div>
