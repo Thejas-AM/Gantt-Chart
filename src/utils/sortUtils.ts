@@ -5,11 +5,11 @@ export const sortGanttTasks = (tasks: GanttTask[]): GanttTask[] => {
   const parentlessTasks: GanttTask[] = [];
 
   tasks.forEach(task => {
-    if (task.parent) {
-      if (!taskGroups[task.parent]) {
-        taskGroups[task.parent] = [];
+    if (task.feature) {
+      if (!taskGroups[task.feature]) {
+        taskGroups[task.feature] = [];
       }
-      taskGroups[task.parent].push(task);
+      taskGroups[task.feature].push(task);
     } else {
       parentlessTasks.push(task);
     }

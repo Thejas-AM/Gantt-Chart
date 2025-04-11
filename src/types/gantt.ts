@@ -7,7 +7,7 @@ export interface GanttTask {
   progress: number; // 0-100
   dependencies?: string[];
   milestone?: boolean;
-  parent: string;
+  feature?: string;
   assignee?: string;
   color?: string;
   status?: 'not-started' | 'in-progress' | 'completed' | 'delayed';

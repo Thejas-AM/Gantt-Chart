@@ -20,14 +20,14 @@ export const exportToCSV = (ganttData: GanttData) => {
     const exportRows: ExportRow[] = [];
     let currentSlNo = 1;
 
-    // Group tasks by parent
+    // Group tasks by feature
     const taskGroups: { [key: string]: GanttTask[] } = {};
     ganttData.tasks.forEach(task => {
-        if (task.parent) {
-            if (!taskGroups[task.parent]) {
-                taskGroups[task.parent] = [];
+        if (task.feature) {
+            if (!taskGroups[task.feature]) {
+                taskGroups[task.feature] = [];
             }
-            taskGroups[task.parent].push(task);
+            taskGroups[task.feature].push(task);
         }
     });
 
@@ -46,7 +46,7 @@ export const exportToCSV = (ganttData: GanttData) => {
             exportRows.push(separatorRow);
         }
 
-        // Add parent/feature row with tasks
+        // Add feature/feature row with tasks
         tasks.forEach((task, index) => {
             const row: ExportRow = {
                 'Sl. No': index === 0 ? currentSlNo++ : 0,

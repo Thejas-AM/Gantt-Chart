@@ -38,10 +38,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
     setProgress(newProgress);
   };
 
-  // Add new state for parent
-  const [parent, setParent] = useState('none');
-  const [customParent, setCustomParent] = useState('');
-  const [isCustomParent, setIsCustomParent] = useState(false);
+  // Add new state for feature
+  const [feature, setFeature] = useState('none');
+  const [customFeature, setCustomFeature] = useState('');
+  const [isCustomFeature, setIsCustomFeature] = useState(false);
 
   // In the form, add after the dependency section
 
@@ -54,20 +54,20 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
       return;
     }
 
-    // Add parent validation
-    if (parent === 'none' && !isCustomParent) {
+    // Add Feature validation
+    if (feature === 'none' && !isCustomFeature) {
       toast({
-        title: "Parent Required",
-        description: "Please select or create a parent task",
+        title: "Feature Required",
+        description: "Please select or create a Feature task",
         variant: "destructive",
       });
       return;
     }
 
-    if (isCustomParent && !customParent.trim()) {
+    if (isCustomFeature && !customFeature.trim()) {
       toast({
-        title: "Parent Required",
-        description: "Please enter a parent task name",
+        title: "Feature Required",
+        description: "Please enter a feature task name",
         variant: "destructive",
       });
       return;
@@ -82,7 +82,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
       color: color,
       status: progress === 0 ? 'not-started' : progress === 100 ? 'completed' : 'in-progress',
       dependencies: dependency !== 'none' ? [dependency] : [],
-      parent: isCustomParent ? customParent : parent,  // Removed the undefined case
+      feature: isCustomFeature ? customFeature : feature,  // Removed the undefined case
     };
     console.log(newTask);
 
@@ -94,9 +94,9 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
     setProgress(0);
     setDependency('none');
     setColor('#6366F1');
-    setParent('none');
-    setCustomParent('');
-    setIsCustomParent(false);
+    setFeature('none');
+    setCustomFeature('');
+    setIsCustomFeature(false);
 
     onClose();
   };
@@ -185,23 +185,23 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="parent">Parent Task *</Label>
+            <Label htmlFor="feature">Feature Task *</Label>
             <Select
-              value={parent}
+              value={feature}
               onValueChange={(value) => {
-                setParent(value);
-                setIsCustomParent(value === 'custom');
+                setFeature(value);
+                setIsCustomFeature(value === 'custom');
               }}
               required
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select or create parent task (required)" />
+                <SelectValue placeholder="Select or create feature task (required)" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                <SelectItem value="custom">Create New Parent</SelectItem>
-                {Array.from(new Set(tasks.map(task => task.parent)))
-                  .filter(parent => parent && parent !== 'none') // Filter out null/undefined/none
+                <SelectItem value="custom">Create New Feature</SelectItem>
+                {Array.from(new Set(tasks.map(task => task.feature)))
+                  .filter(feature => feature && feature !== 'none') // Filter out null/undefined/none
                   .map((parentName) => (
                     <SelectItem key={parentName} value={parentName}>
                       {parentName}
@@ -210,13 +210,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
               </SelectContent>
             </Select>
 
-            {isCustomParent && (
+            {isCustomFeature && (
               <div className="mt-2">
                 <Input
-                  placeholder="Enter new parent task name"
-                  value={customParent}
-                  onChange={(e) => setCustomParent(e.target.value)}
-                  required={isCustomParent}
+                  placeholder="Enter new feature task name"
+                  value={customFeature}
+                  onChange={(e) => setCustomFeature(e.target.value)}
+                  required={isCustomFeature}
                 />
               </div>
             )}

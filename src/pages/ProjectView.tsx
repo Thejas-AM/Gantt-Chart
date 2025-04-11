@@ -316,7 +316,7 @@ const ProjectView = () => {
           milestone: task.milestone,
           color: task.color,
           status: task.status,
-          parent: task.parent
+          feature: task.feature
         })),
         categories: ganttData.categories || [] // Include categories array
       }

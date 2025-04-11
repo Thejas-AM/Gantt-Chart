@@ -76,7 +76,7 @@ export const processChatCommand = (
           progress: 0,
           dependencies: [],
           color: '#6366F1',
-          parent: ''
+          feature: ''
         };
         
         updatedData.tasks.push(newTask);
@@ -222,7 +222,7 @@ export const processChatCommand = (
           milestone: true,
           dependencies: [],
           color: '#F59E0B',
-          parent: ''
+          feature: ''
         };
         
         updatedData.tasks.push(newMilestone);
