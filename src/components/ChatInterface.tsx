@@ -10,6 +10,7 @@ import { useChatSuggestions } from '@/hooks/useChatSuggestions';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import AIControls from '@/components/AIControls';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -17,8 +18,15 @@ interface ChatInterfaceProps {
   tasks: GanttTask[];
   useAI?: boolean;
   onToggleAI: (enabled: boolean) => void;
-  modelType: 'azure' | 'local';
-  onModelChange: (type: 'azure' | 'local') => void;
+  modelType: 'azure' | 'local' | 'custom';
+  onModelChange: (type: 'azure' | 'local' | 'custom') => void;
+  customConfig?: {
+    endpoint: string;
+    apiKey: string;
+    modelName: string;
+    isConfigured?: boolean;  // Add this flag
+  };
+  onCustomConfigChange?: (config: { endpoint: string; apiKey: string; modelName: string, isConfigured?: boolean; }) => void;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
@@ -28,7 +36,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   useAI = false,
   onToggleAI,
   modelType,
-  onModelChange
+  onModelChange,
+  customConfig = { endpoint: '', apiKey: '', modelName: '' },
+  onCustomConfigChange
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
@@ -92,6 +102,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             onToggleAI={onToggleAI}
             modelType={modelType}
             onModelChange={onModelChange}
+            customConfig={customConfig}
+            onCustomConfigChange={onCustomConfigChange}
           />
         </div>
       </div>

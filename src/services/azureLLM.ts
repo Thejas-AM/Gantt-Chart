@@ -21,8 +21,8 @@ const systemPrompt = `You are a Gantt chart task manager. Follow these rules exa
       "progress": number (between 0 and 100),
       "dependencies": string[] (keep existing unless asked to change),
       "milestone": boolean (true/false),
-      "color": "string (hex color like #FF0000)"
-      "parent": "string (keep existing unless asked to change)",
+      "color": "string (hex color like #FF0000)",
+      "feature": "string (feature name or undefined)"
     }
   ],
   "message": "string (brief response about what changed)"
@@ -34,7 +34,8 @@ Important:
 - If you don't understand a command, keep existing task data unchanged
 - All dates must be valid Unix timestamps in milliseconds
 - Progress must be between 0 and 100
-- Return the complete tasks array, including unmodified tasks`;
+- Return the complete tasks array, including unmodified tasks
+- Feature field should be preserved unless explicitly asked to change`;
 
 export const processWithAzureLLM = async (
     message: string,
@@ -166,6 +167,85 @@ export const processWithLocalLLM = async (
     };
   } catch (error) {
     console.error('LLM Processing Error:', error);
+    throw error;
+  }
+};
+
+
+interface CustomLLMConfig {
+  endpoint: string;
+  apiKey: string;
+  modelName: string;
+}
+
+export const processWithCustomLLM = async (
+  message: string,
+  ganttData: GanttData,
+  config: CustomLLMConfig
+): Promise<{ updatedData: GanttData; response: string }> => {
+  try {
+    const response = await fetch(config.endpoint + "/openai/deployments/" + config.modelName + "/chat/completions?api-version=2023-07-01-preview", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.apiKey}`,
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        model: config.modelName,
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: `Current tasks: ${JSON.stringify(ganttData.tasks, null, 2)}
+Command: ${message}
+Project start date: ${new Date(ganttData.tasks[0]?.start || Date.now()).toISOString()}`
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 1000,
+        response_format: { type: "json_object" }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Custom LLM Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+      throw new Error(`Failed to process with Custom LLM: ${response.status} ${response.statusText}`);
+    }
+
+    const aiResponse = await response.json();
+    const parsedResponse = JSON.parse(aiResponse.choices[0].message.content);
+
+    // Validate response structure
+    if (!parsedResponse.tasks || !Array.isArray(parsedResponse.tasks)) {
+      throw new Error('Invalid response format from Custom LLM');
+    }
+
+    // Validate each task
+    parsedResponse.tasks = parsedResponse.tasks.map(task => ({
+      ...task,
+      progress: Math.min(100, Math.max(0, task.progress || 0)),
+      dependencies: Array.isArray(task.dependencies) ? task.dependencies : [],
+      color: task.color || '#6366F1'
+    }));
+
+    return {
+      updatedData: {
+        ...ganttData,
+        tasks: parsedResponse.tasks
+      },
+      response: parsedResponse.message || "Task updated successfully"
+    };
+  } catch (error) {
+    console.error('Custom LLM Processing Error:', error);
     throw error;
   }
 };

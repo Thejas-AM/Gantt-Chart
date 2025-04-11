@@ -12,7 +12,7 @@ import { GanttData, GanttTask, ChatMessage, GanttProject } from '@/types/gantt';
 import { processChatCommand } from '@/utils/chatProcessor';
 import { Calendar, MessageSquare, BarChart2, ArrowLeft, Download, Save } from 'lucide-react';
 import { initialGanttData } from '@/data/initialData';
-import { processWithAzureLLM, processWithLocalLLM } from '@/services/azureLLM';
+import { processWithAzureLLM, processWithCustomLLM, processWithLocalLLM } from '@/services/azureLLM';
 import { sortGanttTasks } from '@/utils/sortUtils';
 import { exportToCSV } from '@/utils/exportUtils';
 
@@ -224,9 +224,17 @@ const ProjectView = () => {
   const [useAI, setUseAI] = useState(false);
   
   // Add this near other state declarations
-  const [modelType, setModelType] = useState<'azure' | 'local'>('azure');
+  const [modelType, setModelType] = useState<'azure' | 'local' | 'custom'>('azure');
   
   // Update handleSendMessage function
+  // Add state for custom LLM config
+  const [customConfig, setCustomConfig] = useState({
+    endpoint: '',
+    apiKey: '',
+    modelName: '',
+  });
+  
+  // Update the handleSendMessage function to handle custom LLM
   const handleSendMessage = async (content: string) => {
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -252,9 +260,17 @@ const ProjectView = () => {
     try {
       let result;
       if (useAI) {
-        result = modelType === 'azure' 
-          ? await processWithAzureLLM(content, ganttData)
-          : await processWithLocalLLM(content, ganttData);
+        if (modelType === 'custom') {
+          // Add validation for custom config
+          if (!customConfig.endpoint || !customConfig.apiKey || !customConfig.modelName) {
+            throw new Error('Please configure all custom LLM settings');
+          }
+          result = await processWithCustomLLM(content, ganttData, customConfig);
+        } else {
+          result = modelType === 'azure' 
+            ? await processWithAzureLLM(content, ganttData)
+            : await processWithLocalLLM(content, ganttData);
+        }
       } else {
         result = processChatCommand(content, ganttData);
       }
@@ -488,6 +504,8 @@ const ProjectView = () => {
                   onToggleAI={setUseAI}
                   modelType={modelType}
                   onModelChange={setModelType}
+                  customConfig={customConfig}
+                  onCustomConfigChange={setCustomConfig}
                 />
               </CardContent>
             </Card>
