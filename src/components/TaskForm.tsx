@@ -20,9 +20,16 @@ interface TaskFormProps {
   onClose: () => void;
   open: boolean;
   tasks?: GanttTask[];
+  isFeatureRequired?: boolean;  // Add this prop
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks = [] }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ 
+  onTaskCreate, 
+  onClose, 
+  open, 
+  tasks = [], 
+  isFeatureRequired = true  // Default to true for backward compatibility
+}) => {
   const defaultStartDate = getCurrentMonday();
 
   const [taskName, setTaskName] = useState('');
@@ -54,8 +61,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
       return;
     }
 
-    // Add Feature validation
-    if (feature === 'none' && !isCustomFeature) {
+    // Update Feature validation to be conditional
+    if (isFeatureRequired && feature === 'none' && !isCustomFeature) {
       toast({
         title: "Feature Required",
         description: "Please select or create a Feature task",
@@ -64,7 +71,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
       return;
     }
 
-    if (isCustomFeature && !customFeature.trim()) {
+    if (isFeatureRequired && isCustomFeature && !customFeature.trim()) {
       toast({
         title: "Feature Required",
         description: "Please enter a feature task name",
@@ -185,7 +192,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreate, onClose, open, tasks 
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="feature">Feature Task *</Label>
+            <Label htmlFor="feature">Feature Task {isFeatureRequired && '*'}</Label>
             <Select
               value={feature}
               onValueChange={(value) => {

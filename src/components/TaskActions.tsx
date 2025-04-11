@@ -78,6 +78,7 @@ const TaskActions: React.FC<TaskActionsProps> = ({
         onClose={() => setIsAddTaskOpen(false)}
         open={isAddTaskOpen}
         tasks={tasks}
+        isFeatureRequired={false}
       />
 
       {/* Scrollable task list with fixed height */}

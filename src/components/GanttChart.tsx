@@ -59,7 +59,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ data, onTaskUpdate }) => {
   const maxDate = hasValidTasks 
     ? Math.max(...validTasks.map(t => t.end)) + 86400000    // one day after last task
     : todayValue + 7 * 86400000; // Default to a week from now if no tasks
-
+  const hasFeatures = validTasks.some(task => task.feature && task.feature.trim() !== '' && task.feature.trim() !== 'none');
   const chartOptions: Highcharts.Options = {
     chart: {
       type: 'gantt',
@@ -112,32 +112,38 @@ const GanttChart: React.FC<GanttChartProps> = ({ data, onTaskUpdate }) => {
         enabled: true
       }
     },
+    // Check if any tasks have valid features
+    
+    
+    // Modify yAxis configuration
     yAxis: {
       type: 'category',
       grid: {
         borderColor: '#E5E7EB',
-        columns: [{
-          title: {
-            text: 'Feature',
-            style: {
-              fontWeight: 'bold'
+        columns: [
+          ...(hasFeatures ? [{
+            title: {
+              text: 'Feature',
+              style: {
+                fontWeight: 'bold'
+              }
+            },
+            labels: {
+              format: '{point.feature}'
             }
-          },
-          labels: {
-            format: '{point.feature}'
-          }
-        },
-        {
-          title: {
-            text: 'Task',
-            style: {
-              fontWeight: 'bold'
+          }] : []),
+          {
+            title: {
+              text: 'Task',
+              style: {
+                fontWeight: 'bold'
+              }
+            },
+            labels: {
+              format: '{point.name}'
             }
-          },
-          labels: {
-            format: '{point.name}'
           }
-        }]
+        ]
       }
     },
     tooltip: {
