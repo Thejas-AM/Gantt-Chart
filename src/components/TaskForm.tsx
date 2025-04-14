@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,51 +17,69 @@ import { useToast } from './ui/use-toast';
 
 interface TaskFormProps {
   onTaskCreate: (task: GanttTask) => void;
+  onTaskUpdate: (task: GanttTask) => void;
   onClose: () => void;
   open: boolean;
   tasks?: GanttTask[];
-  isFeatureRequired?: boolean;  // Add this prop
+  isFeatureRequired?: boolean;
+  editingTask?: GanttTask | null;
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({ 
   onTaskCreate, 
+  onTaskUpdate,
   onClose, 
   open, 
   tasks = [], 
-  isFeatureRequired = true  // Default to true for backward compatibility
+  isFeatureRequired = true,
+  editingTask = null
 }) => {
   const defaultStartDate = getCurrentMonday();
 
-  const [taskName, setTaskName] = useState('');
-  const [startDate, setStartDate] = useState<Date>(defaultStartDate);
-  const [duration, setDuration] = useState(5);
-  const [progress, setProgress] = useState(0);
-  const [dependency, setDependency] = useState('none'); // Changed from '' to 'none'
-  const [color, setColor] = useState('#6366F1');
-  const { toast } = useToast();
+  // Initialize state with editingTask values if present
+  const [taskName, setTaskName] = useState(editingTask?.name || '');
+  const [startDate, setStartDate] = useState<Date>(editingTask ? timestampToDate(editingTask.start) : defaultStartDate);
+  const [duration, setDuration] = useState(editingTask ? 
+    Math.ceil((editingTask.end - editingTask.start) / (24 * 60 * 60 * 1000)) : 5);
+  const [progress, setProgress] = useState(editingTask?.progress || 0);
+  const [dependency, setDependency] = useState(editingTask?.dependencies?.[0] || 'none');
+  const [color, setColor] = useState(editingTask?.color || '#6366F1');
+  const [feature, setFeature] = useState(editingTask?.feature || 'none');
+  const [customFeature, setCustomFeature] = useState('');
+  const [isCustomFeature, setIsCustomFeature] = useState(false);
+  const {toast} = useToast();
 
+  // Add handleProgressIncrement function
   const handleProgressIncrement = (amount: number) => {
     const newProgress = Math.min(100, Math.max(0, progress + amount));
     setProgress(newProgress);
   };
 
-  // Add new state for feature
-  const [feature, setFeature] = useState('none');
-  const [customFeature, setCustomFeature] = useState('');
-  const [isCustomFeature, setIsCustomFeature] = useState(false);
+  // Update form title and button text based on mode
+  const isEditMode = Boolean(editingTask);
+  const formTitle = isEditMode ? 'Edit Task' : 'Create New Task';
+  const buttonText = isEditMode ? 'Update Task' : 'Create Task';
 
-  // In the form, add after the dependency section
+  // Update useEffect to handle editingTask changes
+  useEffect(() => {
+    if (editingTask) {
+      setTaskName(editingTask.name);
+      setStartDate(timestampToDate(editingTask.start));
+      setDuration(Math.ceil((editingTask.end - editingTask.start) / (24 * 60 * 60 * 1000)));
+      setProgress(editingTask.progress);
+      setDependency(editingTask.dependencies?.[0] || 'none');
+      setColor(editingTask.color || '#6366F1');
+      setFeature(editingTask.feature || 'none');
+      setIsCustomFeature(false);
+      setCustomFeature('');
+    }
+  }, [editingTask]);
 
-
-  // Update the handleSubmit function
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!taskName.trim()) {
-      return;
-    }
+    if (!taskName.trim()) return;
 
-    // Update Feature validation to be conditional
     if (isFeatureRequired && feature === 'none' && !isCustomFeature) {
       toast({
         title: "Feature Required",
@@ -71,17 +89,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
       return;
     }
 
-    if (isFeatureRequired && isCustomFeature && !customFeature.trim()) {
-      toast({
-        title: "Feature Required",
-        description: "Please enter a feature task name",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newTask: GanttTask = {
-      id: `task${Date.now()}`,
+    const taskData: GanttTask = {
+      id: editingTask?.id || `task${Date.now()}`,
       name: taskName,
       start: dateToTimestamp(startDate),
       end: dateToTimestamp(addDays(startDate, duration)),
@@ -89,12 +98,17 @@ const TaskForm: React.FC<TaskFormProps> = ({
       color: color,
       status: progress === 0 ? 'not-started' : progress === 100 ? 'completed' : 'in-progress',
       dependencies: dependency !== 'none' ? [dependency] : [],
-      feature: isCustomFeature ? customFeature : feature,  // Removed the undefined case
+      feature: isCustomFeature ? customFeature : feature,
+      milestone: editingTask?.milestone || false
     };
-    console.log(newTask);
 
-    onTaskCreate(newTask);
-    // Reset form including new fields
+    if (isEditMode) {
+      onTaskUpdate(taskData);
+    } else {
+      onTaskCreate(taskData);
+    }
+
+    // Reset form
     setTaskName('');
     setStartDate(defaultStartDate);
     setDuration(5);
@@ -108,13 +122,14 @@ const TaskForm: React.FC<TaskFormProps> = ({
     onClose();
   };
 
+  // Update DialogTitle and Button text
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
+          <DialogTitle>{formTitle}</DialogTitle>
           <DialogDescription>
-            Fill in the details to add a new task to your project.
+            {isEditMode ? 'Update the task details.' : 'Fill in the details to add a new task to your project.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -298,7 +313,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
           <div className="flex justify-end mt-4">
             <Button type="submit">
-              <Check className="h-4 w-4 mr-2" /> Create Task
+              <Check className="h-4 w-4 mr-2" /> {buttonText}
             </Button>
           </div>
         </form>

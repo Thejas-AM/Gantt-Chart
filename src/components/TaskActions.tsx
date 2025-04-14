@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Edit, Plus, Check, Circle, CirclePlus, CircleMinus, DeleteIcon, Delete, Trash } from 'lucide-react';
 import { formatDateTime, timestampToDate } from '@/utils/dateUtils';
 import TaskForm from './TaskForm';
+import { Switch } from '@radix-ui/react-switch';
 
 interface TaskActionsProps {
   tasks: GanttTask[];
@@ -23,35 +24,41 @@ const TaskActions: React.FC<TaskActionsProps> = ({
   onTaskDelete  // Add this line
 }) => {
   const [selectedTask, setSelectedTask] = useState<GanttTask | null>(null);
-  const [editedName, setEditedName] = useState('');
-  const [editedProgress, setEditedProgress] = useState(0);
-  const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
+  const [editedTask, setEditedTask] = useState<Partial<GanttTask>>({});
+
+  // Update state
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<GanttTask | null>(null);
 
   const handleEditTask = (task: GanttTask) => {
-    setSelectedTask(task);
-    setEditedName(task.name);
-    setEditedProgress(task.progress);
+    setEditingTask(task);
+    setIsTaskFormOpen(true);
   };
 
+  // In the return statement, replace both Sheet and TaskForm with:
+  {/* Task Form Dialog for both Create and Edit */ }
+
+
+  {/* Update the Add Task button onClick */ }
+
+
+  {/* Update the Edit button */ }
+
   const handleSaveChanges = () => {
-    if (selectedTask) {
+    if (selectedTask && editedTask) {
       onTaskUpdate({
         ...selectedTask,
-        name: editedName,
-        progress: editedProgress,
-        status: editedProgress === 0 ? 'not-started' :
-          editedProgress === 100 ? 'completed' : 'in-progress',
+        ...editedTask,
+        status: editedTask.progress === 0 ? 'not-started' :
+          editedTask.progress === 100 ? 'completed' : 'in-progress',
       });
       setSelectedTask(null);
+      setEditedTask({});
     }
   };
 
-  const handleProgressIncrement = (amount: number) => {
-    const newProgress = Math.min(100, Math.max(0, editedProgress + amount));
-    setEditedProgress(newProgress);
-  };
+  const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
 
-  // Add this near other handlers
   const handleDeleteTask = (taskId: string) => {
     onTaskDelete(taskId);
   };
@@ -66,7 +73,10 @@ const TaskActions: React.FC<TaskActionsProps> = ({
           variant="outline"
           size="sm"
           className="flex items-center gap-1"
-          onClick={() => setIsAddTaskOpen(true)}
+          onClick={() => {
+            setEditingTask(null);
+            setIsTaskFormOpen(true);
+          }}
         >
           <Plus className="h-4 w-4" /> Add Task
         </Button>
@@ -75,10 +85,15 @@ const TaskActions: React.FC<TaskActionsProps> = ({
       {/* Task Form Dialog */}
       <TaskForm
         onTaskCreate={onTaskCreate}
-        onClose={() => setIsAddTaskOpen(false)}
-        open={isAddTaskOpen}
+        onTaskUpdate={onTaskUpdate}
+        onClose={() => {
+          setIsTaskFormOpen(false);
+          setEditingTask(null);
+        }}
+        open={isTaskFormOpen}
         tasks={tasks}
         isFeatureRequired={false}
+        editingTask={editingTask}
       />
 
       {/* Scrollable task list with fixed height */}
@@ -95,86 +110,13 @@ const TaskActions: React.FC<TaskActionsProps> = ({
                 </h4>
               </div>
               <div className="flex gap-2 flex-shrink-0">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditTask(task)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent>
-                    <SheetHeader>
-                      <SheetTitle>Edit Task</SheetTitle>
-                      <SheetDescription>
-                        Make changes to your task here.
-                      </SheetDescription>
-                    </SheetHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <label htmlFor="name" className="text-sm font-medium">
-                          Task Name
-                        </label>
-                        <Input
-                          id="name"
-                          value={editedName}
-                          onChange={(e) => setEditedName(e.target.value)}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <label className="text-sm font-medium">Progress</label>
-                          <span className="text-sm text-gray-500">{editedProgress}%</span>
-                        </div>
-                        <Progress value={editedProgress} className="h-2" />
-                        <div className="space-y-3 mt-3">
-                          {/* Quick select buttons */}
-                          <div className="grid grid-cols-5 gap-1">
-                            {[0, 25, 50, 75, 100].map((value) => (
-                              <Button
-                                key={value}
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setEditedProgress(value)}
-                                className={`${editedProgress === value ? 'bg-primary/10' : ''}`}
-                              >
-                                {value}%
-                              </Button>
-                            ))}
-                          </div>
-                          {/* Fine-tune controls */}
-                          <div className="flex items-center justify-between">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleProgressIncrement(-5)}
-                              disabled={editedProgress <= 0}
-                            >
-                              <CircleMinus className="h-4 w-4" />
-                            </Button>
-                            <span className="text-sm font-medium">{editedProgress}%</span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleProgressIncrement(5)}
-                              disabled={editedProgress >= 100}
-                            >
-                              <CirclePlus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex justify-end mt-4">
-                      <Button onClick={handleSaveChanges}>
-                        <Check className="h-4 w-4 mr-2" /> Save Changes
-                      </Button>
-                    </div>
-                  </SheetContent>
-                </Sheet>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEditTask(task)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"

@@ -199,7 +199,12 @@ const ProjectView = () => {
   const handleTaskDelete = (taskId: string) => {
     setGanttData(prev => ({
       ...prev,
-      tasks: prev.tasks.filter(task => task.id !== taskId)
+      tasks: prev.tasks
+        .filter(task => task.id !== taskId)
+        .map(task => ({
+          ...task,
+          dependencies: task.dependencies.filter(depId => depId !== taskId)
+        }))
     }));
 
     if (project) {
@@ -207,7 +212,12 @@ const ProjectView = () => {
         ...project,
         data: {
           ...project.data,
-          tasks: project.data.tasks.filter(task => task.id !== taskId)
+          tasks: project.data.tasks
+            .filter(task => task.id !== taskId)
+            .map(task => ({
+              ...task,
+              dependencies: task.dependencies.filter(depId => depId !== taskId)
+            }))
         }
       });
       setHasUnsavedChanges(true);
@@ -215,7 +225,7 @@ const ProjectView = () => {
 
     toast({
       title: "Task Deleted",
-      description: "The task has been removed from the project.",
+      description: "The task and its dependencies have been removed from the project.",
       duration: 3000,
     });
   };
