@@ -1,4 +1,5 @@
 import { GanttData } from '@/types/gantt';
+import { ICustomLLMConfig } from '@/types/llm';
 
 const AZURE_API_KEY = import.meta.env.VITE_AZURE_API_KEY;
 const AZURE_ENDPOINT = import.meta.env.VITE_AZURE_ENDPOINT;
@@ -171,20 +172,84 @@ export const processWithLocalLLM = async (
   }
 };
 
+export const processWithAzureCustomLLM = async (
+  message: string,
+  ganttData: GanttData,
+  config: ICustomLLMConfig
+): Promise<{ updatedData: GanttData; response: string }> => {
+  const apiVersion = config.apiVersion || '2023-07-01-preview';
+  
+  try {
+    const response = await fetch(`${config.endpoint}/openai/deployments/${config.modelName}/chat/completions?api-version=${apiVersion}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': config.apiKey,
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: `Current tasks: ${JSON.stringify(ganttData.tasks, null, 2)}
+Command: ${message}
+Project start date: ${new Date(ganttData.tasks[0]?.start || Date.now()).toISOString()}`
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 1000,
+        response_format: { type: "json_object" }
+      }),
+    });
 
-interface CustomLLMConfig {
-  endpoint: string;
-  apiKey: string;
-  modelName: string;
-}
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Azure Custom LLM Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+      throw new Error(`Failed to process with Azure Custom LLM: ${response.status} ${response.statusText}`);
+    }
+
+    const aiResponse = await response.json();
+    const parsedResponse = JSON.parse(aiResponse.choices[0].message.content);
+
+    if (!parsedResponse.tasks || !Array.isArray(parsedResponse.tasks)) {
+      throw new Error('Invalid response format from Azure Custom LLM');
+    }
+
+    parsedResponse.tasks = parsedResponse.tasks.map(task => ({
+      ...task,
+      progress: Math.min(100, Math.max(0, task.progress || 0)),
+      dependencies: Array.isArray(task.dependencies) ? task.dependencies : [],
+      color: task.color || '#6366F1'
+    }));
+
+    return {
+      updatedData: {
+        ...ganttData,
+        tasks: parsedResponse.tasks
+      },
+      response: parsedResponse.message || "Task updated successfully"
+    };
+  } catch (error) {
+    console.error('Azure Custom LLM Processing Error:', error);
+    throw error;
+  }
+};
 
 export const processWithCustomLLM = async (
   message: string,
   ganttData: GanttData,
-  config: CustomLLMConfig
+  config: ICustomLLMConfig
 ): Promise<{ updatedData: GanttData; response: string }> => {
   try {
-    const response = await fetch(config.endpoint + "/openai/deployments/" + config.modelName + "/chat/completions?api-version=2023-07-01-preview", {
+    const response = await fetch(config.endpoint + "/chat/completions", {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

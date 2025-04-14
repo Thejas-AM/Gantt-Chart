@@ -12,17 +12,16 @@ import { GanttData, GanttTask, ChatMessage, GanttProject } from '@/types/gantt';
 import { processChatCommand } from '@/utils/chatProcessor';
 import { Calendar, MessageSquare, BarChart2, ArrowLeft, Download, Save } from 'lucide-react';
 import { initialGanttData } from '@/data/initialData';
-import { processWithAzureLLM, processWithCustomLLM, processWithLocalLLM } from '@/services/azureLLM';
+import { processWithAzureCustomLLM, processWithAzureLLM, processWithCustomLLM, processWithLocalLLM } from '@/services/azureLLM';
 import { sortGanttTasks } from '@/utils/sortUtils';
 import { exportToCSV } from '@/utils/exportUtils';
+import { ICustomLLMConfig, ModelType } from '@/types/llm';
 
 const ProjectView = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // This would typically come from an API or state management
-  // For this example, we're using a mockup
   const [project, setProject] = useState<GanttProject | null>(null);
   const [ganttData, setGanttData] = useState<GanttData>(initialGanttData);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -34,22 +33,20 @@ const ProjectView = () => {
     }
   ]);
 
-  // Add save button state
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
-  // Update the useEffect
+
   useEffect(() => {
     if (!projectId) {
       navigate('/');
       return;
     }
-  
+
     try {
       const savedProjects = localStorage.getItem('gantt-projects');
       if (savedProjects) {
         const projects = JSON.parse(savedProjects);
         const currentProject = projects.find((p: GanttProject) => p.id === projectId);
-        
+
         if (currentProject) {
           // Sort tasks before setting project and ganttData
           const sortedTasks = sortGanttTasks(currentProject.data.tasks);
@@ -67,7 +64,7 @@ const ProjectView = () => {
           return;
         }
       }
-      
+
       // If project not found, redirect to home
       toast({
         title: "Project Not Found",
@@ -75,7 +72,7 @@ const ProjectView = () => {
         variant: "destructive",
       });
       navigate('/');
-      
+
     } catch (error) {
       console.error("Error loading project:", error);
       navigate('/');
@@ -90,26 +87,26 @@ const ProjectView = () => {
         return 'Changes you made may not be saved.';
       }
     };
-  
+
     window.addEventListener('beforeunload', handleBeforeUnload);
-  
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [hasUnsavedChanges]);
-  
+
   // Add save function
   const handleSaveProject = () => {
     if (!project) return;
-  
+
     try {
       const savedProjects = localStorage.getItem('gantt-projects');
       const projects = savedProjects ? JSON.parse(savedProjects) : [];
-      const updatedProjects = projects.map((p: GanttProject) => 
-        p.id === project.id ? {...project, data: ganttData} : p
+      const updatedProjects = projects.map((p: GanttProject) =>
+        p.id === project.id ? { ...project, data: ganttData } : p
       );
       localStorage.setItem('gantt-projects', JSON.stringify(updatedProjects));
-      
+
       setHasUnsavedChanges(false);
       toast({
         title: "Project Saved",
@@ -124,7 +121,7 @@ const ProjectView = () => {
       });
     }
   };
-  
+
   // Update task handlers to set unsaved changes
   const handleTaskUpdate = (updatedTask: GanttTask) => {
     if (project && updatedTask.start < project.startDate) {
@@ -157,7 +154,7 @@ const ProjectView = () => {
     }
   }
   const handleTaskCreate = (newTask: GanttTask) => {
-    console.log(project,newTask.start)
+    console.log(project, newTask.start)
     if (project && newTask.start < project.startDate) {
       toast({
         title: "Task Start Date Error",
@@ -229,22 +226,29 @@ const ProjectView = () => {
       duration: 3000,
     });
   };
-  
+
   // Add state for AI toggle
   const [useAI, setUseAI] = useState(false);
-  
-  // Add this near other state declarations
-  const [modelType, setModelType] = useState<'azure' | 'local' | 'custom'>('azure');
-  
-  // Update handleSendMessage function
-  // Add state for custom LLM config
-  const [customConfig, setCustomConfig] = useState({
+
+  // Update modelType to include azure-custom
+  // Replace the modelType state
+  const [modelType, setModelType] = useState<ModelType>(ModelType.Azure);
+
+  // Add Azure custom config state
+  const [customConfig, setCustomConfig] = useState<ICustomLLMConfig>({
     endpoint: '',
     apiKey: '',
     modelName: '',
+    isConfigured: false
   });
-  
-  // Update the handleSendMessage function to handle custom LLM
+  const [azureCustomConfig, setAzureCustomConfig] = useState<ICustomLLMConfig>({
+    endpoint: '',
+    apiKey: '',
+    modelName: '',
+    isConfigured: false
+  });
+
+  // Update the handleSendMessage function
   const handleSendMessage = async (content: string) => {
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -252,9 +256,9 @@ const ProjectView = () => {
       sender: 'user',
       timestamp: Date.now()
     };
-  
+
     setChatMessages(prev => [...prev, userMessage]);
-  
+
     const processingMessageId = (Date.now() + 1).toString();
     setChatMessages(prev => [
       ...prev,
@@ -266,33 +270,37 @@ const ProjectView = () => {
         isProcessing: true
       }
     ]);
-  
+
     try {
       let result;
       if (useAI) {
         if (modelType === 'custom') {
-          // Add validation for custom config
           if (!customConfig.endpoint || !customConfig.apiKey || !customConfig.modelName) {
             throw new Error('Please configure all custom LLM settings');
           }
           result = await processWithCustomLLM(content, ganttData, customConfig);
+        } else if (modelType === 'azure-custom') {
+          if (!azureCustomConfig.endpoint || !azureCustomConfig.apiKey || !azureCustomConfig.modelName) {
+            throw new Error('Please configure all Azure custom LLM settings');
+          }
+          result = await processWithAzureCustomLLM(content, ganttData, azureCustomConfig);
         } else {
-          result = modelType === 'azure' 
+          result = modelType === 'azure'
             ? await processWithAzureLLM(content, ganttData)
             : await processWithLocalLLM(content, ganttData);
         }
       } else {
         result = processChatCommand(content, ganttData);
       }
-  
+
       // Sort the tasks from LLM response
       const sortedData = {
         ...result.updatedData,
         tasks: sortGanttTasks(result.updatedData.tasks)
       };
-  
+
       setGanttData(sortedData);
-      
+
       if (project) {
         setProject(prev => ({
           ...prev!,
@@ -300,7 +308,7 @@ const ProjectView = () => {
         }));
         setHasUnsavedChanges(true);
       }
-  
+
       setChatMessages(prev => [
         ...prev.filter(msg => msg.id !== processingMessageId),
         {
@@ -322,7 +330,7 @@ const ProjectView = () => {
       ]);
     }
   };
-  
+
 
   const handleDownloadJSON = () => {
     const exportData = {
@@ -347,7 +355,7 @@ const ProjectView = () => {
         categories: ganttData.categories || [] // Include categories array
       }
     };
-  
+
     const dataStr = JSON.stringify(exportData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = window.URL.createObjectURL(dataBlob);
@@ -363,18 +371,18 @@ const ProjectView = () => {
   const handleBackClick = () => {
     navigate('/projects');
   };
-  
+
 
   const blocker = useBlocker(
-  ({ currentLocation, nextLocation }) => 
-    hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname
+    ({ currentLocation, nextLocation }) =>
+      hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname
   );
-  
+
   useEffect(() => {
     if (blocker.state === "blocked" && !hasUnsavedChanges) {
       blocker.reset();
     }
-  
+
     if (blocker.state === "blocked") {
       const proceed = window.confirm('You have unsaved changes. Are you sure you want to leave?');
       if (proceed) {
@@ -384,7 +392,7 @@ const ProjectView = () => {
       }
     }
   }, [blocker, hasUnsavedChanges]);
-  
+
   // Update the back button in the return JSX
 
   if (!project) {
@@ -505,7 +513,6 @@ const ProjectView = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                // Update the ChatInterface usage
                 <ChatInterface
                   messages={chatMessages}
                   onSendMessage={handleSendMessage}
@@ -516,6 +523,8 @@ const ProjectView = () => {
                   onModelChange={setModelType}
                   customConfig={customConfig}
                   onCustomConfigChange={setCustomConfig}
+                  azureCustomConfig={azureCustomConfig}
+                  onAzureCustomConfigChange={setAzureCustomConfig}
                 />
               </CardContent>
             </Card>

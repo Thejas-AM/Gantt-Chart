@@ -7,10 +7,8 @@ import { ChatMessage, GanttTask } from '@/types/gantt';
 import { formatDateTime } from '@/utils/dateUtils';
 import { Send, Loader2 } from 'lucide-react';
 import { useChatSuggestions } from '@/hooks/useChatSuggestions';
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import AIControls from '@/components/AIControls';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ICustomLLMConfig, ModelType } from '@/types/llm';
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -18,27 +16,26 @@ interface ChatInterfaceProps {
   tasks: GanttTask[];
   useAI?: boolean;
   onToggleAI: (enabled: boolean) => void;
-  modelType: 'azure' | 'local' | 'custom';
-  onModelChange: (type: 'azure' | 'local' | 'custom') => void;
-  customConfig?: {
-    endpoint: string;
-    apiKey: string;
-    modelName: string;
-    isConfigured?: boolean;  // Add this flag
-  };
-  onCustomConfigChange?: (config: { endpoint: string; apiKey: string; modelName: string, isConfigured?: boolean; }) => void;
+  modelType: ModelType;
+  onModelChange: (type: ModelType) => void;
+  customConfig?: ICustomLLMConfig;
+  onCustomConfigChange?: (config: ICustomLLMConfig) => void;
+  azureCustomConfig?: ICustomLLMConfig;
+  onAzureCustomConfigChange?: (config: ICustomLLMConfig) => void;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
-  messages, 
-  onSendMessage, 
+const ChatInterface: React.FC<ChatInterfaceProps> = ({
+  messages,
+  onSendMessage,
   tasks,
   useAI = false,
   onToggleAI,
   modelType,
   onModelChange,
-  customConfig = { endpoint: '', apiKey: '', modelName: '' },
-  onCustomConfigChange
+  customConfig = { endpoint: '', apiKey: '', modelName: '', isConfigured: false },
+  onCustomConfigChange,
+  azureCustomConfig = { endpoint: '', apiKey: '', modelName: '', apiVersion: '', isConfigured: false },
+  onAzureCustomConfigChange
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
@@ -104,10 +101,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             onModelChange={onModelChange}
             customConfig={customConfig}
             onCustomConfigChange={onCustomConfigChange}
+            azureCustomConfig={azureCustomConfig}
+            onAzureCustomConfigChange={onAzureCustomConfigChange}
           />
         </div>
       </div>
-      
+
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
           {messages.map((message) => (
@@ -116,11 +115,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg p-3 ${
-                  message.sender === 'user'
+                className={`max-w-[80%] rounded-lg p-3 ${message.sender === 'user'
                     ? 'bg-primary text-white'
                     : 'bg-gray-100 text-gray-800'
-                }`}
+                  }`}
               >
                 <div className="text-sm">{message.content}</div>
                 <div className="text-xs mt-1 opacity-70">
@@ -138,7 +136,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
-      
+
       <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200">
         <div className="relative flex flex-col">
           <div className="flex space-x-2">
@@ -154,15 +152,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <Send className="h-4 w-4" />
             </Button>
           </div>
-          
+
           {suggestions.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-10">
               {suggestions.map((suggestion, index) => (
                 <div
                   key={suggestion}
-                  className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
-                    index === selectedSuggestion ? 'bg-gray-100' : ''
-                  }`}
+                  className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${index === selectedSuggestion ? 'bg-gray-100' : ''
+                    }`}
                   onClick={() => handleSuggestionClick(suggestion)}
                 >
                   {suggestion}
