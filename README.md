@@ -4,6 +4,8 @@
 
 An interactive Gantt chart application for project management with AI-powered task management capabilities.
 
+🟢 **Live Demo**: [https://gantt-chart-ekjw.onrender.com](https://gantt-chart-ekjw.onrender.com)
+
 ---
 
 ## 🚀 Features
@@ -50,7 +52,7 @@ An interactive Gantt chart application for project management with AI-powered ta
 
 ```bash
 # 1. Clone the repository
-git clone [https://github.com/yourusername/gantt-chart.git](https://github.com/Thejas-AM/Gantt-Chart.git)
+git clone https://github.com/Thejas-AM/Gantt-Chart.git
 cd gantt-chart
 
 # 2. Install dependencies
