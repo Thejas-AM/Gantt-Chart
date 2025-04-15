@@ -1,6 +1,5 @@
-Here’s your properly formatted `README.md` file, cleaned up for clarity and consistent formatting:
 
-```markdown
+
 # 📅 Gantt Chart Project Management Tool
 
 An interactive Gantt chart application for project management with AI-powered task management capabilities.
@@ -56,7 +55,6 @@ cd gantt-chart
 
 # 2. Install dependencies
 npm install
-```
 
 ### 🔐 Set up environment variables
 
